@@ -1,8 +1,8 @@
 <div>
   <img align="left" src="https://img.shields.io/badge/referer-boston-lightgrey.svg" />
   <img align="left" src="https://img.shields.io/badge/location-austin%20%7C%20miami-green.svg" />
-  <img align="left" src="https://img.shields.io/badge/user%20agent-ubuntu%20linux-orange.svg" />
-  <img align="left" src="https://img.shields.io/badge/content%20language-rust%20%7C%20go-blue.svg" />
+  <img align="left" src="https://img.shields.io/badge/user%20agent-ubuntu%3B%20linux-orange.svg" />
+  <img align="left" src="https://img.shields.io/badge/content%20language-rust%20%7C%20go%20%7C%20python%20%7C%20javascript-blue.svg" />
 </div>
 <br><br>
 <div>
