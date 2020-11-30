@@ -14,3 +14,6 @@
     <img  align="left" src="https://readme-stats-cfgj2cxdy.vercel.app/api?username=gregl83&count_private=true&show_icons=true" />
   </a>
 </div>
+<div>
+  <a href="https://github.com/gregl83/gregl83/id_rsa.pub">public &#128273;</a>
+</div>
