@@ -15,5 +15,5 @@
   </a>
 </div>
 <div>
-  <a href="https://github.com/gregl83/gregl83/id_rsa.pub">public &#128273;</a>
+  <a href="https://github.com/gregl83/gregl83/id_rsa.pub">&#128273;</a>
 </div>
