@@ -6,12 +6,3 @@
   <img align="left" src="https://img.shields.io/badge/content%20language-rust%2C%20%20go%2C%20%20python%2C%20%20javascript-blue.svg" />
   <a href="https://raw.githubusercontent.com/gregl83/gregl83/master/id_rsa.pub" download>&#128273;</a>
 </div>
-<br><br>
-<div>
-  <a href="https://readme-stats-cfgj2cxdy.vercel.app/api/top-langs/?username=gregl83&hide=php">
-    <img align="left" src="https://readme-stats-cfgj2cxdy.vercel.app/api/top-langs/?username=gregl83&hide=php" />
-  </a>
-  <a href="https://readme-stats-cfgj2cxdy.vercel.app/api?username=gregl83&count_private=true&show_icons=true">
-    <img  align="left" src="https://readme-stats-cfgj2cxdy.vercel.app/api?username=gregl83&count_private=true&show_icons=true" />
-  </a>
-</div>
