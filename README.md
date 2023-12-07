@@ -3,7 +3,7 @@
 </div>
 <div>
   <img align="left" src="https://img.shields.io/badge/referer-boston-lightgrey.svg" />
-  <img align="left" src="https://img.shields.io/badge/location-austin-green.svg" />
+  <img align="left" src="https://img.shields.io/badge/location-global-green.svg" />
   <img align="left" src="https://img.shields.io/badge/user%20agent-ubuntu%3B%20linux-orange.svg" />
-  <img align="left" src="https://img.shields.io/badge/content%20language-rust%2C%20%20go%2C%20%20python%2C%20%20javascript-blue.svg" />
+  <img align="left" src="https://img.shields.io/badge/content%20language-polyglot-blue.svg" />
 </div>
