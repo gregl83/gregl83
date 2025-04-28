@@ -4,7 +4,7 @@
 </div>
 <div>
   <img align="left" src="https://img.shields.io/badge/referer-boston-lightgrey.svg" />
-  <img align="left" src="https://img.shields.io/badge/location-global-green.svg" />
+  <img align="left" src="https://img.shields.io/badge/location-nv%3B%20usa-green.svg" />
   <img align="left" src="https://img.shields.io/badge/user%20agent-ubuntu%3B%20linux-orange.svg" />
   <img align="left" src="https://img.shields.io/badge/content%20language-polyglot-blue.svg" />
 </div>
