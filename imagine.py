@@ -267,15 +267,15 @@ Examples:
     parser.add_argument(
         "--width",
         type=int,
-        default=150,
-        help="Output image width (default: 150)"
+        default=130,
+        help="Output image width (default: 130)"
     )
 
     parser.add_argument(
         "--height",
         type=int,
-        default=150,
-        help="Output image height (default: 150)"
+        default=130,
+        help="Output image height (default: 130)"
     )
 
     parser.add_argument(
