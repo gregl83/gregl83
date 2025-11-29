@@ -1,0 +1,62 @@
+name: Daily Imagine
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs every 24 hours at midnight UTC
+  workflow_dispatch:    # Allows manual triggering
+
+jobs:
+  generate-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: |
+          if ! command -v gh &> /dev/null; then
+            type -p curl >/dev/null || sudo apt install curl -y
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+            && sudo apt update \
+            && sudo apt install gh -y
+          else
+            echo "GitHub CLI is already installed."
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Generate imagines and create release with artifacts
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Run the Python script to generate images
+          python imagine.py -l grok -i grok
+      
+          # Create a datetime tag (e.g., imagine-202410031200)
+          TAG_NAME="imagine-$(date +%Y%m%d%H%M)"
+          
+          # Human readable date (e.g., 11/29/2025)
+          READABLE_DATE="$(date +'%m/%d/%Y')"
+      
+          # Create the release
+          gh release create $TAG_NAME \
+          --title "Daily Imagine $READABLE_DATE" \
+          --notes "AI generated image experiment."
+      
+          # Upload ALL generated png images as release assets
+          gh release upload $TAG_NAME out/*.png
