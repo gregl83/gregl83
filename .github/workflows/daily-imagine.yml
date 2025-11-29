@@ -45,7 +45,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Run the Python script to generate images
-          python imagine.py -l grok -i grok
+          python imagine.py -l gemini -i gemini
       
           # Create a datetime tag (e.g., imagine-202410031200)
           TAG_NAME="imagine-$(date +%Y%m%d%H%M)"
