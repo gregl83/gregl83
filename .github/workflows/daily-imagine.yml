@@ -2,7 +2,7 @@ name: Daily Imagine
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs every 24 hours at midnight UTC
+    - cron: '0 0 * * 0'  # Runs every Sunday night at midnight UTC
   workflow_dispatch:    # Allows manual triggering
 
 jobs:

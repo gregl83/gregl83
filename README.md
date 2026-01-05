@@ -1,5 +1,5 @@
 <p align="center">
-  <sub><a href="https://github.com/gregl83/gregl83/blob/master/imagine.py">Daily AI Image Experiment</a></sub>
+  <sub><a href="https://github.com/gregl83/gregl83/blob/master/imagine.py">Weekly AI Image Experiment</a></sub>
 </p>
 <p align="center">
   <img src="https://github.com/gregl83/gregl83/releases/latest/download/alpha.png" alt="Alpha">
