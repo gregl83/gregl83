@@ -47,7 +47,7 @@ class GeminiLanguageGenerator:
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-3-pro-preview",
+            model="gemini-3.1-pro-preview",
             contents=user_prompt,
             config=google_genai_types.GenerateContentConfig(
                 system_instruction=system_prompt,
@@ -89,7 +89,7 @@ class GeminiImageGenerator:
 
     def generate(self, prompt: str, output_path: Path) -> None:
         response = self.client.models.generate_content(
-            model="gemini-3-pro-image-preview",
+            model="gemini-3-pro-image",
             contents=[
                 prompt,
             ],
