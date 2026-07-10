@@ -55,7 +55,7 @@ jobs:
       
           # Create the release
           gh release create $TAG_NAME \
-          --title "Daily Imagine $READABLE_DATE" \
+          --title "Weekly Imagine $READABLE_DATE" \
           --notes "AI generated image experiment."
       
           # Upload ALL generated png images as release assets

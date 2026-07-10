@@ -167,9 +167,9 @@ def generate_images(
         "current_date": date.today().isoformat()
     }
 
-    sys_template = template_env.get_template('prompts/daily-imagine-sys-prompt.j2')
+    sys_template = template_env.get_template('prompts/imagine-sys-prompt.j2')
     system_prompt = sys_template.render(context)
-    user_template = template_env.get_template('prompts/daily-imagine-user-prompt.j2')
+    user_template = template_env.get_template('prompts/imagine-user-prompt.j2')
     user_prompt = user_template.render(context)
 
     print(f"\n🪄  Generating image generation prompts")
