@@ -103,6 +103,47 @@ class ShowcaseTests(unittest.TestCase):
                 s.generate(projects, 'test-model')
             self.assertEqual(len(requests), 4)  # No automatic paid retries.
 
+    def test_overlong_summary_is_repaired_once_and_responses_saved(self):
+        import httpx
+        from google import genai
+        projects = [project('org/good'), project('org/long')]
+        original = {p['repo']: {k: v for k, v in summary(p).items() if k != 'repo'}
+                    for p in projects}
+        original['org/long']['summary'] = 'x' * 69
+        corrected = {k: v for k, v in summary(projects[1]).items() if k != 'repo'}
+        requests = []
+        real_client = genai.Client
+        repair_succeeds = True
+
+        def respond(request):
+            payload = json.loads(request.content)
+            requests.append(payload)
+            body = original if len(requests) % 2 else {
+                'org/long': corrected if repair_succeeds else original['org/long']}
+            return httpx.Response(200, json={'candidates': [{
+                'finishReason': 'STOP',
+                'content': {'role': 'model', 'parts': [
+                    {'text': json.dumps({'projects': body})}]}}]})
+
+        def client(**kwargs):
+            kwargs['http_options'].client_args = {'transport': httpx.MockTransport(respond)}
+            return real_client(**kwargs)
+
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, {'GOOGLE_API_KEY': 'offline-test-key'}), \
+             patch.object(genai, 'Client', side_effect=client):
+            output = Path(directory)
+            self.assertEqual(s.generate(projects, 'test-model', output=output),
+                             [summary(p) for p in projects])
+            self.assertTrue((output / 'model-response.json').exists())
+            self.assertTrue((output / 'model-repair.json').exists())
+            required = requests[1]['generationConfig']['responseSchema']['properties']['projects']
+            self.assertEqual(required['required'], ['org/long'])
+            repair_succeeds = False
+            with self.assertRaisesRegex(ValueError, 'still invalid after one repair'):
+                s.generate(projects, 'test-model', output=output)
+            self.assertEqual(len(requests), 4)
+
     def test_coverage_error_identifies_missing_unexpected_and_duplicates(self):
         p = project()
         wrong = summary(p) | {'repo': 'other/repo'}

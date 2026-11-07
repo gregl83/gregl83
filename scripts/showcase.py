@@ -121,7 +121,7 @@ def validate_summary(item, project):
     return item
 
 
-def generate(changed, model):
+def generate(changed, model, *, output=None, feedback=None):
     from google import genai
     from google.genai import types
     from pydantic import BaseModel, Field, create_model
@@ -148,10 +148,14 @@ def generate(changed, model):
 
     if not os.environ.get('GOOGLE_API_KEY'):
         raise ValueError('GOOGLE_API_KEY is required for changed summaries. Set it in the environment or repository .env; never paste it into logs.')
-    # One request, no automatic retries, no search/tools or image generation.
+    # One initial request and at most one targeted repair; no transport retries.
     payload = [{'repo': p['repo'], 'description': p['description'],
                 'organization': p.get('organization'),
                 'documents': [{'path': d['path'], 'text': d['text']} for d in p['documents']]} for p in changed]
+    if feedback:
+        payload = {'repositories': payload, 'corrections': feedback,
+                   'instruction': 'Correct these rejected summaries. Aim for 45-55 summary '
+                                  'characters, never exceed 68. Preserve exact source evidence.'}
     with genai.Client(api_key=os.environ['GOOGLE_API_KEY'],
                       http_options=types.HttpOptions(timeout=120000,
                           retry_options=types.HttpRetryOptions(attempts=1))) as client:
@@ -159,6 +163,10 @@ def generate(changed, model):
             config=types.GenerateContentConfig(system_instruction=POLICY.read_text(),
                 response_mime_type='application/json', response_schema=Batch,
                 max_output_tokens=8192, temperature=0.2))
+    if output is not None:
+        output.mkdir(parents=True, exist_ok=True)
+        name = 'model-repair.json' if feedback else 'model-response.json'
+        (output / name).write_text(response.model_dump_json(indent=2) + '\n')
     candidates = response.candidates or []
     reason = candidates[0].finish_reason if candidates else None
     if reason != types.FinishReason.STOP:
@@ -173,8 +181,23 @@ def generate(changed, model):
     if set(actual) != expected:
         raise ValueError(f'Model repository coverage: missing={sorted(expected - set(actual))}; '
                          f'unexpected={sorted(set(actual) - expected)}')
-    validated = Batch.model_validate(decoded).model_dump()['projects']
-    return [validated[p['repo']] | {'repo': p['repo']} for p in changed]
+    valid, invalid, errors = {}, [], {}
+    for p in changed:
+        name = p['repo']
+        try:
+            item = Summary.model_validate(actual[name]).model_dump() | {'repo': name}
+            validate_summary(item, p)
+            valid[name] = item
+        except (ValueError, KeyError, TypeError) as exc:
+            invalid.append(p)
+            errors[name] = {'rejected': actual[name], 'error': str(exc)}
+    if invalid:
+        if feedback is not None:
+            raise ValueError(f'Summaries still invalid after one repair: {json.dumps(errors)}')
+        print(f'Repairing {len(invalid)} invalid summaries; retaining {len(valid)} valid summaries')
+        repaired = generate(invalid, model, output=output, feedback=errors)
+        valid.update({item['repo']: item for item in repaired})
+    return [valid[p['repo']] for p in changed]
 
 
 def summarize(projects, cache, model, generate_fn=generate):
@@ -265,7 +288,8 @@ def main():
     if len(projects) < args.project_count:
         raise ValueError('Not enough documented candidates for the requested project count')
     cache = json.loads(args.cache.read_text()) if args.cache else {}
-    cache, changed = summarize(projects, cache, args.model)
+    cache, changed = summarize(projects, cache, args.model,
+                               lambda changed, model: generate(changed, model, output=args.output))
     # Preserve valid paid work locally even if selection/rendering later fails.
     (args.output / 'showcase-cache.json').write_text(json.dumps(cache, indent=2) + '\n')
     selected = choose(projects, cache, args.project_count)
@@ -285,7 +309,7 @@ def main():
     for name, data in [('showcase-cache.json', cache), ('showcase.json', manifest), ('storyboard.json', storyboard)]:
         (args.output / name).write_text(json.dumps(data, indent=2) + '\n')
     (args.output / 'release-notes.md').write_text('\n'.join(notes))
-    print(f'Selected {[p["repo"] for p, _ in selected]}; {changed} changed projects; {int(changed > 0)} model requests')
+    print(f'Selected {[p["repo"] for p, _ in selected]}; {changed} changed projects; AI used: {bool(changed)} (at most two requests)')
 
 
 if __name__ == '__main__':

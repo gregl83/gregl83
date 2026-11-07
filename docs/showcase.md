@@ -20,7 +20,9 @@ AI produces text only. No image-generation API is called.
    outside those excerpts do not trigger regeneration.
 4. Hash supplied content, description, model, and prompt policy. Unchanged content
    reuses its cached summary even if a new commit only changes unrelated files.
-5. Send all changed candidates in **one request**, no automatic retries. At most
+5. Send all changed candidates in **one initial request**, with at most one
+   correction request containing only invalid summaries. No transport retries.
+   Save raw responses as review artifacts before validation. At most
    twelve candidates / 72,000 document characters and 8,192 output tokens. No
    search, tools, image APIs, or separate model-ranking call. Unchanged runs use
    zero model requests. API charges still depend on the configured model.
