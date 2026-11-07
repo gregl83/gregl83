@@ -94,7 +94,7 @@ def fingerprint(project, model):
     material = {'repo': project['repo'], 'description': project['description'],
                 'documents': [(d['path'], d['text']) for d in project['documents']],
                 'organization': project.get('organization'),
-                'policy': POLICY.read_text(), 'model': model,
+                'policy': POLICY.read_text(), 'model': model, 'copy_format': 'title-newline-v1',
                 'layout': json.loads((ROOT / 'assets/profile/storyboard.json').read_text())['layouts']}
     return hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()
 
@@ -272,7 +272,7 @@ def project_text_length(template, item):
     """Validate actual rendered fit and return the longest wrapped text length."""
     from PIL import ImageFont
     from scripts.render_profile import wrap_message
-    text = f'{item["title"]}. {item["summary"]}'
+    text = f'{item["title"]}.\n{item["summary"]}'
     longest = 0
     for name, layout in template['layouts'].items():
         cfg = template | layout
@@ -295,7 +295,7 @@ def make_storyboard(template, selected):
     scenes = [dict(s) for s in template['scenes'][:2]]
     start = 18
     for project, item in selected:
-        text = f'{item["title"]}. {item["summary"]}'
+        text = f'{item["title"]}.\n{item["summary"]}'
         longest = project_text_length(template, item)
         scenes.append({'start': start, 'text': text})
         start += math.ceil(longest / template['characters_per_second'] + 0.35 + 5)

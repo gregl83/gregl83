@@ -5,35 +5,34 @@
   "scenes": [
     {
       "start": 3,
-      "text": "There's more beneath the surface."
+      "text": "Wake up, Operator..."
     },
     {
       "start": 10,
-      "text": "Let me show you what I'm building."
+      "text": "The source code has you."
     },
     {
       "start": 18,
-      "text": "Agent Vigilo. Isolated WASM evaluators and durable AI evaluation runs."
+      "text": "Agent Vigilo.\nIsolated WASM evaluators and durable AI evaluation runs."
     },
     {
       "start": 30,
-      "text": "bazel-paq. Fingerprint build outputs without changing individual build rules."
+      "text": "bazel-paq.\nFingerprint build outputs without changing individual build rules."
     },
     {
       "start": 42,
-      "text": "Netband. Track latency under load while bandwidth tests run."
+      "text": "Netband.\nTrack latency under load while bandwidth tests run."
     },
     {
       "start": 53,
-      "text": "Follow gregl83."
+      "text": "Follow me."
     },
     {
       "start": 61,
-      "text": "Knock, knock."
+      "text": "Knock, knock, Operator."
     }
   ],
   "persistent_lines": [
-    "gregl83",
     "Software Systems Engineer",
     "Applied AI & Data Systems"
   ],

@@ -25,8 +25,9 @@ font. It makes no network/model calls. Desktop: 960x480, 26px type; mobile:
 480x360, 22px type. Shared timeline, 12 fps, continuous GIF loop. Exact output
 bytes require the same Python, Pillow, and FFmpeg versions.
 
-Persistent text occupies three ordinary terminal lines. Animated messages start
-after two blank lines and wrap at word boundaries using available width, with
+Persistent role and specialty text occupy two ordinary terminal lines. Animated messages start
+after two blank lines. Each project title ends with a period on its own line;
+the description starts on the next line. Messages wrap at word boundaries using available width, with
 a small right-side text margin. Layout is determined before typing to avoid word
 jumps. Text uses pale green cores, green phosphor bloom, and faint scanlines.
 

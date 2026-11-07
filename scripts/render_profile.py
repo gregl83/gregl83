@@ -86,8 +86,10 @@ def wrap_message(text, config, font):
     """Lay out the complete message once so words never jump while typing."""
     available = config['size'][0] - 2 * config['text_origin'][0] - 24
     columns = int(available // font.getlength('M'))
-    return '\n'.join(textwrap.wrap(text, width=columns, break_long_words=True,
-                                   break_on_hyphens=False))
+    return '\n'.join(
+        '\n'.join(textwrap.wrap(line, width=columns, break_long_words=True,
+                                break_on_hyphens=False))
+        for line in text.split('\n'))
 
 
 def render_variant(config, output, suffix):

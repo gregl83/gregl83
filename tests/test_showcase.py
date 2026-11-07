@@ -230,6 +230,24 @@ class ShowcaseTests(unittest.TestCase):
         selected = s.choose(projects, {'entries': entries})
         self.assertNotIn(s.FEATURED_REPO, [p['repo'] for p, _ in selected])
 
+    def test_project_title_occupies_its_own_line_in_both_layouts(self):
+        from PIL import ImageFont
+        from scripts.render_profile import wrap_message
+        template = json.loads((s.ROOT / 'assets/profile/storyboard.json').read_text())
+        p = project()
+        board = s.make_storyboard(template, [(p, summary(p))])
+        text = board['scenes'][2]['text']
+        self.assertEqual(text, 'Engine.\nIsolate evaluators with WebAssembly sandboxes.')
+        self.assertNotIn('gregl83', template['persistent_lines'])
+        for layout in template['layouts'].values():
+            cfg = template | layout
+            font = ImageFont.truetype(str(s.ROOT / 'assets/profile/fonts/CourierPrime-Regular.ttf'),
+                                      cfg['font_size'])
+            wrapped = wrap_message(text, cfg, font)
+            self.assertEqual(wrapped.splitlines()[0], 'Engine.')
+            self.assertTrue(wrapped.splitlines()[1].startswith('Isolate'))
+            self.assertNotIn('\n\n', wrapped)
+
     def test_storyboard_fit_and_reading_time(self):
         template = json.loads((s.ROOT / 'assets/profile/storyboard.json').read_text())
         original = copy.deepcopy(template)
