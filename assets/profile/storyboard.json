@@ -1,0 +1,68 @@
+{
+  "fps": 12,
+  "duration": 73,
+  "characters_per_second": 12,
+  "scenes": [
+    {
+      "start": 3,
+      "text": "There's more beneath the surface."
+    },
+    {
+      "start": 10,
+      "text": "Let me show you what I'm building."
+    },
+    {
+      "start": 18,
+      "text": "Agent Vigilo. Isolated WASM evaluators and durable AI evaluation runs."
+    },
+    {
+      "start": 30,
+      "text": "bazel-paq. Fingerprint build outputs without changing individual build rules."
+    },
+    {
+      "start": 42,
+      "text": "Netband. Track latency under load while bandwidth tests run."
+    },
+    {
+      "start": 53,
+      "text": "Follow gregl83."
+    },
+    {
+      "start": 61,
+      "text": "Knock, knock."
+    }
+  ],
+  "persistent_lines": [
+    "gregl83",
+    "Software Systems Engineer",
+    "Applied AI & Data Systems"
+  ],
+  "layouts": {
+    "desktop": {
+      "size": [
+        960,
+        480
+      ],
+      "font_size": 26,
+      "text_origin": [
+        86,
+        62
+      ],
+      "line_height": 34
+    },
+    "mobile": {
+      "size": [
+        480,
+        360
+      ],
+      "font_size": 22,
+      "text_origin": [
+        28,
+        32
+      ],
+      "line_height": 30
+    }
+  },
+  "shutdown_start": 67,
+  "intro_pause": 3
+}

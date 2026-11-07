@@ -1,0 +1,4 @@
+# Text-only showcase and deterministic raster renderer; no image-provider SDK.
+google-genai==1.52.0
+pillow==12.0.0
+python-dotenv==1.2.1

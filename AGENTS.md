@@ -9,8 +9,16 @@ Read `README.md` and the relevant implementation before editing.
   image generation, and cropping/resizing.
 - `prompts/*.j2`: Jinja templates for four news-inspired image prompts.
 - `pyproject.toml`: Python >=3.10 and runtime dependencies; CI uses Python 3.13.
-- `.github/workflows/weekly-imagine.yml`: weekly/manual generation and GitHub releases.
-- `README.md`: public profile displaying assets from the latest release.
+- `.github/workflows/weekly-imagine.yml`: paused image generation; manual release workflow retained.
+- `README.md`: public profile with a scripted terminal introduction and project links.
+
+- `scripts/render_profile.py` and `assets/profile/`: reproducible terminal animation;
+  see `assets/profile/BUILD.md` for rendering and draft limitations.
+
+- `scripts/showcase.py`, `scripts/publish_showcase.py`, and
+  `.github/workflows/weekly-showcase.yml`: cached project summaries and weekly
+  release assets. See `docs/showcase.md`. Public copy must remain project-focused
+  and must not include job-seeking or employer-targeting language.
 
 ## Working approach
 
@@ -37,8 +45,14 @@ Keep shared instructions in this file and public project documentation in tracke
 
 ## Project contracts
 
-- Preserve `alpha.png`, `bravo.png`, `charlie.png`, and `delta.png`: the profile
-  references these release asset names. Default output is `out/`, resized to 130x130.
+- Local preview: `.venv/bin/python -m scripts.preview_showcase` writes only to
+  ignored `out/`; do not publish as part of preview. `--example` needs no API key.
+- Root README always points to latest-release assets and is never rewritten by
+  the pipeline. Local Markdown preview: `assets/profile/README.md` (example) or
+  `out/local-preview/README.md` (generated).
+
+- Preserve `alpha.png`, `bravo.png`, `charlie.png`, and `delta.png` as the existing
+  image experiment release contract. Default output is `out/`, resized to 130x130.
 - Keep prompt templates and consumers aligned: JSON contains an `images` array
   of four entries with `date_relevance`, `category`, `style`, `colors`, and `prompt`.
 - Preserve the templates' date context and visual constraints unless the task
@@ -55,7 +69,9 @@ Keep shared instructions in this file and public project documentation in tracke
 
 ## Validation
 
-There is currently no configured test suite or lint tool. Do not claim otherwise.
+Install `requirements/showcase.txt` into `.venv` and run
+`.venv/bin/python -m unittest discover -s tests -v` for showcase changes.
+The showcase tests are offline. There is no configured lint tool.
 Install dependencies in an isolated environment with `python -m pip install .`
 when runtime checks are needed. With dependencies installed, these checks do not
 call generation APIs or require credentials:

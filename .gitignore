@@ -26,3 +26,12 @@ out/
 
 # Local agent workspace and plans
 /.agents/
+
+# Python local caches
+__pycache__/
+.venv/
+build/
+dist/
+
+# Local animation review sheets (release media is built under out/)
+/assets/profile/review*.png

@@ -1,0 +1,72 @@
+name: Weekly Project Showcase
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a new latest release (disable for preview only)
+        type: boolean
+        default: true
+      project_count:
+        description: Number of projects
+        type: choice
+        options: ['3', '4']
+        default: '3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-project-showcase
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHOWCASE_MODEL: ${{ vars.SHOWCASE_MODEL || 'gemini-3.5-flash-lite' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install render and text-only dependencies
+        run: |
+          python -m pip install --require-hashes -r requirements/showcase.txt
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Test offline invariants
+        run: python -m unittest discover -s tests -v
+      - name: Restore previous successful summary cache
+        run: python -m scripts.publish_showcase restore
+      - name: Collect sources and prepare showcase
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PROJECT_COUNT: ${{ inputs.project_count || '3' }}
+        run: python -m scripts.showcase --cache out/previous-showcase.json --project-count "$PROJECT_COUNT"
+      - name: Render both layouts
+        run: python scripts/render_profile.py --storyboard out/showcase/storyboard.json --output out/showcase
+      - name: Validate media
+        run: python -m scripts.publish_showcase validate
+      - name: Write portable preview
+        run: python -c "from pathlib import Path; from scripts.preview_showcase import write_preview; write_preview(Path('out/showcase'))"
+      - name: Save review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: showcase-preview-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/showcase/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Publish complete release
+        if: github.event_name == 'schedule' || inputs.publish
+        env:
+          RELEASE_TAG: showcase-${{ github.run_id }}-${{ github.run_attempt }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: python -m scripts.publish_showcase publish --tag "$RELEASE_TAG" --commit "$SOURCE_COMMIT"

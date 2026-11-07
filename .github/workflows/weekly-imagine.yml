@@ -1,8 +1,8 @@
 name: Weekly Imagine
 
 on:
-  schedule:
-    - cron: '0 0 * * 0'  # Runs every Sunday night at midnight UTC
+  # Automatic generation is paused. Re-enable the workflow in GitHub before
+  # manually running it; restore the schedule only when intentionally resuming.
   workflow_dispatch:    # Allows manual triggering
 
 jobs:

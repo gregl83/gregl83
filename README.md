@@ -1,9 +1,8 @@
 <p align="center">
-  <sub><a href="https://github.com/gregl83/gregl83/blob/master/imagine.py">Weekly AI Image Experiment</a></sub>
-</p>
-<p align="center">
-  <img src="https://github.com/gregl83/gregl83/releases/latest/download/alpha.png" alt="Alpha">
-  <img src="https://github.com/gregl83/gregl83/releases/latest/download/bravo.png" alt="Bravo">
-  <img src="https://github.com/gregl83/gregl83/releases/latest/download/charlie.png" alt="Charlie">
-  <img src="https://github.com/gregl83/gregl83/releases/latest/download/delta.png" alt="Delta">
+  <a href="https://github.com/gregl83/gregl83/releases/latest">
+    <picture>
+      <source media="(max-width: 600px)" srcset="https://github.com/gregl83/gregl83/releases/latest/download/intro-mobile.gif">
+      <img src="https://github.com/gregl83/gregl83/releases/latest/download/intro.gif" alt="gregl83 — Software Systems Engineer. Applied AI &amp; Data Systems. View showcased projects and supporting sources." width="720">
+    </picture>
+  </a>
 </p>

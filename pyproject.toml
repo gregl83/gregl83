@@ -15,3 +15,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = []
+# Preserve installability of the archived image experiment as the repo grows.
+[tool.setuptools]
+py-modules = ["imagine"]

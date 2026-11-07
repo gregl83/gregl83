@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-11-07T02:19:52.782104+00:00",
+  "model": "gemini-3.5-flash-lite",
+  "changed_projects": 0,
+  "projects": [
+    {
+      "repo": "agent-vigilo/vigilo",
+      "url": "https://github.com/agent-vigilo/vigilo",
+      "commit": "5a7731c622740c9b986031119b382ebb19e208f6",
+      "title": "Agent Vigilo",
+      "summary": "Isolated WASM evaluators and durable AI evaluation runs.",
+      "evidence": [
+        {
+          "url": "https://github.com/agent-vigilo/vigilo/blob/5a7731c622740c9b986031119b382ebb19e208f6/README.md",
+          "quote": "Agent Vigilo provides versioned WASM evaluators, durable evaluation runs, worker/coordinator execution, normalized results, and pass/fail gates that can sit in CI or release workflows."
+        },
+        {
+          "url": "https://github.com/agent-vigilo/vigilo/blob/5a7731c622740c9b986031119b382ebb19e208f6/README.md",
+          "quote": "Wasmtime fuel, memory, timeout, log, and concurrency limits isolate evaluator execution."
+        }
+      ]
+    },
+    {
+      "repo": "gregl83/bazel-paq",
+      "url": "https://github.com/gregl83/bazel-paq",
+      "commit": "7f39134ab8662ca7b4706bd24fe33302db7130f8",
+      "title": "bazel-paq",
+      "summary": "Fingerprint build outputs without changing individual build rules.",
+      "evidence": [
+        {
+          "url": "https://github.com/gregl83/bazel-paq/blob/7f39134ab8662ca7b4706bd24fe33302db7130f8/README.md",
+          "quote": "`bazel-paq` adds a `.paq` content hash beside each generated directory or file."
+        },
+        {
+          "url": "https://github.com/gregl83/bazel-paq/blob/7f39134ab8662ca7b4706bd24fe33302db7130f8/README.md",
+          "quote": "No changes to individual build rules are needed."
+        }
+      ]
+    },
+    {
+      "repo": "gregl83/netband",
+      "url": "https://github.com/gregl83/netband",
+      "commit": "26cd88d9d4607d7bbdcf3343ad2e175a58b0e650",
+      "title": "Netband",
+      "summary": "Track latency under load while bandwidth tests run.",
+      "evidence": [
+        {
+          "url": "https://github.com/gregl83/netband/blob/26cd88d9d4607d7bbdcf3343ad2e175a58b0e650/README.md",
+          "quote": "continuous monitoring keeps pinging during bandwidth tests and labels the active phase."
+        }
+      ]
+    }
+  ],
+  "summary_origin": "Manually reviewed source-backed examples; no live model call."
+}

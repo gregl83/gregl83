@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gregl83 — responsive animation test</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0 auto; padding: 24px 16px; max-width: 960px; background: #101512; color: #d9e8dd; font: 16px/1.6 system-ui, sans-serif; }
+  video, img { display: block; width: 100%; max-width: 720px; height: auto; background: #030906; }
+  a { color: #83f5a4; }
+</style>
+<h1>Project showcase preview</h1>
+<p>Source-backed example summaries for Agent Vigilo, bazel-paq, and Netband, manually reviewed for this preview. The weekly pipeline selects and summarizes projects automatically.</p>
+<p>Resize the browser: at 600px or narrower, the closer mobile framing is selected. Above 600px, the spacious desktop framing is selected.</p>
+<p id="selection" aria-live="polite"></p>
+<a href="showcase-example.md">
+  <picture>
+    <source media="(max-width: 600px)" srcset="intro-mobile.gif">
+    <img id="animation" src="intro.gif" alt="gregl83 — Software Systems Engineer. Applied AI &amp; Data Systems. Follow gregl83." width="720">
+  </picture>
+</a>
+<p>The GIF loops; selecting it opens the example project sources. Browser and GitHub animation preferences can affect playback.</p>
+<h2>Desktop video</h2>
+<video controls playsinline preload="metadata" poster="poster.png"><source src="intro.mp4" type="video/mp4"></video>
+<h2>Mobile video</h2>
+<video controls playsinline preload="metadata" poster="poster-mobile.png"><source src="intro-mobile.mp4" type="video/mp4"></video>
+<script>
+const animation = document.getElementById('animation');
+function report() {
+  document.getElementById('selection').textContent = `${innerWidth}px viewport — ${animation.currentSrc.split('/').pop()}`;
+}
+animation.addEventListener('load', report);
+window.addEventListener('resize', () => requestAnimationFrame(report));
+report();
+</script>
+</html>
