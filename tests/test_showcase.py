@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -58,6 +59,56 @@ class ShowcaseTests(unittest.TestCase):
         for values in ([], [summary(p), summary(p)], [summary(p) | {'repo': 'other/repo'}]):
             with self.assertRaises(ValueError):
                 s.summarize([p], {}, 'model', lambda *_: values)
+
+    def test_generation_contract_through_real_sdk(self):
+        import httpx
+        from google import genai
+        projects = [project(f'org/project-{i}') for i in range(12)]
+        expected = {p['repo']: {k: v for k, v in summary(p).items() if k != 'repo'}
+                    for p in projects}
+        real_client = genai.Client
+        requests = []
+        body = {'projects': expected}
+        finish_reason = 'STOP'
+
+        def respond(request):
+            requests.append(json.loads(request.content))
+            return httpx.Response(200, json={'candidates': [{
+                'finishReason': finish_reason,
+                'content': {'role': 'model', 'parts': [{'text': json.dumps(body)}]}}]})
+
+        def client(**kwargs):
+            kwargs['http_options'].client_args = {'transport': httpx.MockTransport(respond)}
+            return real_client(**kwargs)
+
+        with patch.dict(os.environ, {'GOOGLE_API_KEY': 'offline-test-key'}), \
+             patch.object(genai, 'Client', side_effect=client):
+            results = s.generate(projects, 'test-model')
+            self.assertEqual(results, [summary(p) for p in projects])
+            schema = requests[0]['generationConfig']['responseSchema']
+            required = schema['properties']['projects']
+            self.assertEqual(set(required['required']), set(expected))
+            self.assertEqual(set(required['properties']), set(expected))
+            self.assertEqual(len(requests), 1)
+
+            body = {'projects': dict(list(expected.items())[1:])}
+            with self.assertRaisesRegex(ValueError, 'missing=.*org/project-0'):
+                s.generate(projects, 'test-model')
+            body = {'projects': expected | {'wrong/repo': next(iter(expected.values()))}}
+            with self.assertRaisesRegex(ValueError, 'unexpected=.*wrong/repo'):
+                s.generate(projects, 'test-model')
+            body = {'projects': expected}
+            finish_reason = 'MAX_TOKENS'
+            with self.assertRaisesRegex(ValueError, 'did not complete'):
+                s.generate(projects, 'test-model')
+            self.assertEqual(len(requests), 4)  # No automatic paid retries.
+
+    def test_coverage_error_identifies_missing_unexpected_and_duplicates(self):
+        p = project()
+        wrong = summary(p) | {'repo': 'other/repo'}
+        with self.assertRaisesRegex(ValueError,
+                "missing=.*user/engine.*unexpected=.*other/repo.*duplicates=.*other/repo"):
+            s.summarize([p], {}, 'model', lambda *_: [wrong, wrong])
 
     def test_discovery_includes_org_pins_filters_private_forks_and_archives(self):
         def repo(name, **kw):

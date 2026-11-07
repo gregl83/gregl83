@@ -49,5 +49,9 @@ For each repository:
   protects, with a concrete mechanism. Do not mention this ranking process or
   intended evaluator in the displayed title or summary.
 
-Return structured JSON with projects containing repo, title, summary, relevance,
-substance, evidence_strength, evidence [{path, quote}].
+Return structured JSON with a projects object keyed by the exact supplied
+owner/repository strings. Every supplied repository is required, including
+low-scoring projects; selection happens later in code. Do not shorten, rename,
+or substitute repository keys with display titles or organization names.
+Each value contains title, summary, relevance, substance, evidence_strength,
+and evidence [{path, quote}].

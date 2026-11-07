@@ -32,8 +32,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SHOWCASE_MODEL: ${{ vars.SHOWCASE_MODEL || 'gemini-3.5-flash-lite' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install render and text-only dependencies
@@ -58,7 +58,7 @@ jobs:
         run: python -c "from pathlib import Path; from scripts.preview_showcase import write_preview; write_preview(Path('out/showcase'))"
       - name: Save review artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: showcase-preview-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/showcase/

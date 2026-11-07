@@ -124,14 +124,13 @@ def validate_summary(item, project):
 def generate(changed, model):
     from google import genai
     from google.genai import types
-    from pydantic import BaseModel, Field
+    from pydantic import BaseModel, Field, create_model
 
     class Evidence(BaseModel):
         path: str
         quote: str
 
     class Summary(BaseModel):
-        repo: str
         title: str = Field(max_length=26)
         summary: str = Field(max_length=68)
         relevance: int = Field(ge=0, le=5)
@@ -139,8 +138,13 @@ def generate(changed, model):
         evidence_strength: int = Field(ge=0, le=5)
         evidence: list[Evidence]
 
+    # Required object keys enforce coverage and preserve exact repository identity.
+    # An unconstrained list allowed omissions, duplicates, and renamed repos.
+    ProjectSummaries = create_model('ProjectSummaries', **{
+        p['repo']: (Summary, ...) for p in changed})
+
     class Batch(BaseModel):
-        projects: list[Summary]
+        projects: ProjectSummaries
 
     if not os.environ.get('GOOGLE_API_KEY'):
         raise ValueError('GOOGLE_API_KEY is required for changed summaries. Set it in the environment or repository .env; never paste it into logs.')
@@ -155,7 +159,22 @@ def generate(changed, model):
             config=types.GenerateContentConfig(system_instruction=POLICY.read_text(),
                 response_mime_type='application/json', response_schema=Batch,
                 max_output_tokens=8192, temperature=0.2))
-    return json.loads(response.text)['projects']
+    candidates = response.candidates or []
+    reason = candidates[0].finish_reason if candidates else None
+    if reason != types.FinishReason.STOP:
+        raise ValueError(f'Model did not complete summaries (finish_reason={reason})')
+    if not response.text:
+        raise ValueError('Model returned no summary text')
+    decoded = json.loads(response.text)
+    actual = decoded.get('projects')
+    expected = {p['repo'] for p in changed}
+    if not isinstance(actual, dict):
+        raise ValueError('Model projects must be an object keyed by repository')
+    if set(actual) != expected:
+        raise ValueError(f'Model repository coverage: missing={sorted(expected - set(actual))}; '
+                         f'unexpected={sorted(set(actual) - expected)}')
+    validated = Batch.model_validate(decoded).model_dump()['projects']
+    return [validated[p['repo']] | {'repo': p['repo']} for p in changed]
 
 
 def summarize(projects, cache, model, generate_fn=generate):
@@ -163,7 +182,13 @@ def summarize(projects, cache, model, generate_fn=generate):
     changed = [p for p in projects if old.get(p['repo'], {}).get('fingerprint') != fingerprint(p, model)]
     new = generate_fn(changed, model) if changed else []
     if len(new) != len(changed) or {i['repo'] for i in new} != {p['repo'] for p in changed}:
-        raise ValueError('Model must return exactly one summary per changed repository')
+        expected = {p['repo'] for p in changed}
+        names = [i['repo'] for i in new]
+        actual = set(names)
+        duplicates = sorted(name for name in actual if names.count(name) > 1)
+        raise ValueError(f'Model repository coverage: expected={len(changed)}, returned={len(new)}; '
+                         f'missing={sorted(expected - actual)}; '
+                         f'unexpected={sorted(actual - expected)}; duplicates={duplicates}')
     returned = {i['repo']: i for i in new}
     entries = {}
     for p in projects:
