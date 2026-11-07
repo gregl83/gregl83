@@ -161,7 +161,7 @@ class ShowcaseTests(unittest.TestCase):
         results = [summary(p) for p in projects[:3]] + [
             {'repo': 'org/bad', 'rejected': 'Summary too long'}]
         cache, _ = s.summarize(projects, {}, 'model', lambda *_: results)
-        self.assertEqual(len(s.choose(projects, cache)), 3)
+        self.assertEqual(len(s.choose(projects, cache, count=3)), 3)
         with self.assertRaisesRegex(ValueError, 'Need 4 distinct'):
             s.choose(projects, cache, count=4)
         with patch.object(s, 'generate') as model:
@@ -184,11 +184,11 @@ class ShowcaseTests(unittest.TestCase):
         private = repo('org/private'); private['isPrivate'] = True
         fork = repo('user/fork'); fork['isFork'] = True
         archived = repo('user/old'); archived['isArchived'] = True
-        data = {'data': {'user': {'pinnedItems': {'nodes': [repo('org/pin'), private]},
+        data = {'data': {'featured': repo(s.FEATURED_REPO), 'user': {'pinnedItems': {'nodes': [repo('org/pin'), private]},
                 'repositories': {'nodes': [repo('user/user'), repo('org/pin'), fork, archived, repo('user/new')]}}}}
         with patch.object(s, 'gh', return_value=data):
             found = s.candidates('user')
-        self.assertEqual([p['nameWithOwner'] for p in found], ['org/pin', 'user/new'])
+        self.assertEqual([p['nameWithOwner'] for p in found], ['org/pin', s.FEATURED_REPO, 'user/new'])
         self.assertTrue(found[0]['pinned'])
 
     def test_family_diversity(self):
@@ -206,7 +206,7 @@ class ShowcaseTests(unittest.TestCase):
             entries[p['repo']] = {'summary': summary(p) | {
                 'relevance': score, 'substance': score, 'evidence_strength': score}}
         projects[1]['pinned'] = False
-        selected = s.choose(projects, {'entries': entries})
+        selected = s.choose(projects, {'entries': entries}, count=3)
         self.assertEqual(len(selected), 3)
         self.assertEqual(len(s.choose(projects, {'entries': entries}, count=4)), 4)
         self.assertEqual(selected[0][0]['repo'], 'user/strong')
@@ -215,6 +215,20 @@ class ShowcaseTests(unittest.TestCase):
         entries['user/weak']['summary']['substance'] = 2
         with self.assertRaises(ValueError):
             s.choose(projects, {'entries': entries})
+
+    def test_featured_project_first_with_four_by_default_and_no_quality_bypass(self):
+        projects = [project(f'user/{name}') for name in ('a', 'b', 'c', 'd')]
+        featured = project(s.FEATURED_REPO)
+        projects.append(featured)
+        entries = {p['repo']: {'summary': summary(p)} for p in projects}
+        entries[s.FEATURED_REPO]['summary'].update(
+            relevance=3, substance=3, evidence_strength=3)
+        selected = s.choose(projects, {'entries': entries})
+        self.assertEqual(len(selected), 4)
+        self.assertEqual(selected[0][0]['repo'], s.FEATURED_REPO)
+        entries[s.FEATURED_REPO]['summary']['evidence_strength'] = 2
+        selected = s.choose(projects, {'entries': entries})
+        self.assertNotIn(s.FEATURED_REPO, [p['repo'] for p, _ in selected])
 
     def test_storyboard_fit_and_reading_time(self):
         template = json.loads((s.ROOT / 'assets/profile/storyboard.json').read_text())

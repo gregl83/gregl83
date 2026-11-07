@@ -1,6 +1,6 @@
 # Weekly project showcase
 
-The profile animation highlights three public projects with concrete engineering
+The profile animation highlights four public projects with concrete engineering
 capabilities. Static identity, terminal styling, responsive framing, pauses, and
 CRT ending remain controlled by `assets/profile/storyboard.json` and the renderer.
 AI produces text only. No image-generation API is called.
@@ -32,8 +32,9 @@ AI produces text only. No image-generation API is called.
    ranking scores, and exact evidence quotes from supplied documents. Invalid
    candidates get one targeted correction attempt, then are excluded if still
    invalid. Text is never silently truncated. Batch/transport failures stop the job.
-7. Rank every candidate before selecting three projects (or four with
-   `--project-count 4`). Weight relevance ×2, engineering substance ×3, and
+7. Feature Agent Vigilo first when it passes validation and the scoring thresholds.
+   Rank the remaining candidates to fill four slots by default (or three with
+   `--project-count 3`). Weight relevance ×2, engineering substance ×3, and
    evidence strength ×3; require at least 3/5 on every axis.
    Pins and recent activity break ties. Never fill a slot with a weak candidate;
    insufficient qualifying projects stops the run and preserves the previous release. Only one member of the paq family is selected.
@@ -136,7 +137,7 @@ Local Markdown previews are separate:
 After committing and pushing the reviewed changes to `master`, immediately run:
 
 ```sh
-gh workflow run weekly-showcase.yml --ref master -f publish=true -f project_count=3
+gh workflow run weekly-showcase.yml --ref master -f publish=true -f project_count=4
 gh run list --workflow weekly-showcase.yml --limit 1
 # Substitute the run ID printed above:
 gh run watch RUN_ID --exit-status
@@ -214,3 +215,6 @@ do not trigger another paid request. Changed evidence or policy reevaluates them
 Publication still requires the requested number of distinct, qualified projects.
 Raw initial and repair responses are retained in review artifacts, not published
 as profile copy.
+
+Agent Vigilo is explicitly collected even if it is no longer pinned. Its featured
+position does not bypass evidence, relevance, or rendered-fit checks.

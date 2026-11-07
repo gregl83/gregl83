@@ -15,6 +15,7 @@ from urllib.parse import quote
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / 'prompts/showcase-system.txt'
 MODEL = 'gemini-3.5-flash-lite'
+FEATURED_REPO = 'agent-vigilo/vigilo'
 MAX_PROJECTS = 12
 MAX_DOCUMENT_CHARS = 6000
 BAD_COPY = re.compile(r'\b(hir(?:e|ing)|recruit\w*|job\w*|career\w*|resume|résumé|candidate|frontier|openai|anthropic|seeking|available for|looking for|employment|opportunities|aspiring|best|fastest|world.class|production.ready)\b', re.I)
@@ -33,13 +34,18 @@ def candidates(owner):
       pinnedItems(first:6, types:REPOSITORY) { nodes { ... on Repository { FIELDS } } }
       repositories(first:30, privacy:PUBLIC, ownerAffiliations:OWNER,
         orderBy:{field:PUSHED_AT,direction:DESC}) { nodes { FIELDS } }
-    } }'''.replace('FIELDS', fields)
+    }
+    featured: repository(owner:"agent-vigilo", name:"vigilo") { FIELDS }
+    }'''.replace('FIELDS', fields)
     result = gh('api', 'graphql', '-f', f'query={query}', '-f', f'owner={owner}')
     if result.get('errors'):
         raise ValueError('GitHub candidate query failed')
     user = result['data']['user']
     found = {}
-    for pinned, nodes in ((True, user['pinnedItems']['nodes']), (False, user['repositories']['nodes'])):
+    featured = result['data'].get('featured')
+    for pinned, nodes in ((True, user['pinnedItems']['nodes']),
+                          (False, [featured] if featured else []),
+                          (False, user['repositories']['nodes'])):
         for repo in nodes:
             name = repo['nameWithOwner']
             if repo['isPrivate'] or repo['isArchived'] or repo['isFork'] or not repo['defaultBranchRef']:
@@ -239,10 +245,11 @@ def summarize(projects, cache, model, generate_fn=generate):
     return {'version': 1, 'entries': entries}, len(changed)
 
 
-def choose(projects, cache, count=3):
+def choose(projects, cache, count=4):
     def rank(p):
         s = cache['entries'][p['repo']]['summary']
-        return (s['relevance'] * 2 + s['substance'] * 3 + s['evidence_strength'] * 3,
+        return (p['repo'] == FEATURED_REPO,
+                s['relevance'] * 2 + s['substance'] * 3 + s['evidence_strength'] * 3,
                 p['pinned'], p['pushed_at'], p['repo'])
     selected, families = [], set()
     eligible = [p for p in projects if 'summary' in cache['entries'].get(p['repo'], {})]
@@ -305,7 +312,7 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT / 'out/showcase')
     parser.add_argument('--cache', type=Path)
     parser.add_argument('--sources', type=Path, help='Reuse a previously collected public snapshot')
-    parser.add_argument('--project-count', type=int, choices=(3, 4), default=3)
+    parser.add_argument('--project-count', type=int, choices=(3, 4), default=4)
     parser.add_argument('--collect-only', action='store_true', help='Read GitHub only; no AI or rendering')
     args = parser.parse_args()
     projects = json.loads(args.sources.read_text()) if args.sources else collect(args.owner)

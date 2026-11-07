@@ -45,7 +45,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output', type=output_directory, default=ROOT / 'out/local-preview')
     p.add_argument('--example', action='store_true', help='Render the checked-in example; no network or API key')
-    p.add_argument('--project-count', choices=(3, 4), type=int, default=3)
+    p.add_argument('--project-count', choices=(3, 4), type=int, default=4)
     args = p.parse_args()
     for tool in ('ffmpeg', 'ffprobe') + (() if args.example else ('gh',)):
         if not shutil.which(tool):

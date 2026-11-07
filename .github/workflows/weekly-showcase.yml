@@ -12,8 +12,8 @@ on:
       project_count:
         description: Number of projects
         type: choice
-        options: ['3', '4']
-        default: '3'
+        options: ['4', '3']
+        default: '4'
 
 permissions:
   contents: read
@@ -48,7 +48,7 @@ jobs:
       - name: Collect sources and prepare showcase
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          PROJECT_COUNT: ${{ inputs.project_count || '3' }}
+          PROJECT_COUNT: ${{ inputs.project_count || '4' }}
         run: python -m scripts.showcase --cache out/previous-showcase.json --project-count "$PROJECT_COUNT"
       - name: Render both layouts
         run: python scripts/render_profile.py --storyboard out/showcase/storyboard.json --output out/showcase
