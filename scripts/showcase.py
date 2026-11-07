@@ -88,14 +88,15 @@ def fingerprint(project, model):
     material = {'repo': project['repo'], 'description': project['description'],
                 'documents': [(d['path'], d['text']) for d in project['documents']],
                 'organization': project.get('organization'),
-                'policy': POLICY.read_text(), 'model': model}
+                'policy': POLICY.read_text(), 'model': model,
+                'layout': json.loads((ROOT / 'assets/profile/storyboard.json').read_text())['layouts']}
     return hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()
 
 
 def validate_summary(item, project):
     if item['repo'] != project['repo']:
         raise ValueError('Summary repository mismatch')
-    for key, limit in (('title', 26), ('summary', 68)):
+    for key, limit in (('title', 26), ('summary', 120)):
         value = item[key]
         if not isinstance(value, str) or not 1 <= len(value) <= limit or value != value.strip():
             raise ValueError(f'Invalid {key} length for {project["repo"]}')
@@ -118,6 +119,8 @@ def validate_summary(item, project):
             raise ValueError('Invalid evidence reference')
         if ref['quote'] not in docs[ref['path']]['text']:
             raise ValueError('Evidence quote not present in supplied source')
+    template = json.loads((ROOT / 'assets/profile/storyboard.json').read_text())
+    project_text_length(template, item)
     return item
 
 
@@ -132,7 +135,7 @@ def generate(changed, model, *, output=None, feedback=None):
 
     class Summary(BaseModel):
         title: str = Field(max_length=26)
-        summary: str = Field(max_length=68)
+        summary: str = Field(max_length=120)
         relevance: int = Field(ge=0, le=5)
         substance: int = Field(ge=0, le=5)
         evidence_strength: int = Field(ge=0, le=5)
@@ -154,8 +157,9 @@ def generate(changed, model, *, output=None, feedback=None):
                 'documents': [{'path': d['path'], 'text': d['text']} for d in p['documents']]} for p in changed]
     if feedback:
         payload = {'repositories': payload, 'corrections': feedback,
-                   'instruction': 'Correct these rejected summaries. Aim for 45-55 summary '
-                                  'characters, never exceed 68. Preserve exact source evidence.'}
+                   'instruction': 'Correct these rejected summaries. Aim for 55-80 summary '
+                                  'characters, shorter if needed to fit four mobile lines '
+                                  'including the title. Preserve exact source evidence.'}
     with genai.Client(api_key=os.environ['GOOGLE_API_KEY'],
                       http_options=types.HttpOptions(timeout=120000,
                           retry_options=types.HttpRetryOptions(attempts=1))) as client:
@@ -193,10 +197,14 @@ def generate(changed, model, *, output=None, feedback=None):
             errors[name] = {'rejected': actual[name], 'error': str(exc)}
     if invalid:
         if feedback is not None:
-            raise ValueError(f'Summaries still invalid after one repair: {json.dumps(errors)}')
-        print(f'Repairing {len(invalid)} invalid summaries; retaining {len(valid)} valid summaries')
-        repaired = generate(invalid, model, output=output, feedback=errors)
-        valid.update({item['repo']: item for item in repaired})
+            for p in invalid:
+                name = p['repo']
+                print(f'Excluding invalid candidate after one repair: {name}')
+                valid[name] = {'repo': name, 'rejected': errors[name]['error']}
+        else:
+            print(f'Repairing {len(invalid)} invalid summaries; retaining {len(valid)} valid summaries')
+            repaired = generate(invalid, model, output=output, feedback=errors)
+            valid.update({item['repo']: item for item in repaired})
     return [valid[p['repo']] for p in changed]
 
 
@@ -215,9 +223,19 @@ def summarize(projects, cache, model, generate_fn=generate):
     returned = {i['repo']: i for i in new}
     entries = {}
     for p in projects:
-        item = returned.get(p['repo']) or old[p['repo']]['summary']
+        name = p['repo']
+        if name not in returned:
+            entries[name] = old[name]
+            if 'summary' in old[name]:
+                validate_summary(old[name]['summary'], p)
+            continue
+        item = returned[name]
+        if 'rejected' in item:
+            # Cache the exclusion so unchanged evidence does not spend again.
+            entries[name] = {'fingerprint': fingerprint(p, model), 'rejection': item['rejected']}
+            continue
         validate_summary(item, p)
-        entries[p['repo']] = {'fingerprint': fingerprint(p, model), 'summary': item}
+        entries[name] = {'fingerprint': fingerprint(p, model), 'summary': item}
     return {'version': 1, 'entries': entries}, len(changed)
 
 
@@ -227,7 +245,8 @@ def choose(projects, cache, count=3):
         return (s['relevance'] * 2 + s['substance'] * 3 + s['evidence_strength'] * 3,
                 p['pinned'], p['pushed_at'], p['repo'])
     selected, families = [], set()
-    for p in sorted(projects, key=rank, reverse=True):
+    eligible = [p for p in projects if 'summary' in cache['entries'].get(p['repo'], {})]
+    for p in sorted(eligible, key=rank, reverse=True):
         s = cache['entries'][p['repo']]['summary']
         if min(s['relevance'], s['substance'], s['evidence_strength']) < 3:
             continue
@@ -242,25 +261,35 @@ def choose(projects, cache, count=3):
     raise ValueError(f'Need {count} distinct projects with supported, relevant summaries')
 
 
-def make_storyboard(template, selected):
+def project_text_length(template, item):
+    """Validate actual rendered fit and return the longest wrapped text length."""
     from PIL import ImageFont
     from scripts.render_profile import wrap_message
+    text = f'{item["title"]}. {item["summary"]}'
+    longest = 0
+    for name, layout in template['layouts'].items():
+        cfg = template | layout
+        font = ImageFont.truetype(str(ROOT / 'assets/profile/fonts/CourierPrime-Regular.ttf'), cfg['font_size'])
+        wrapped = wrap_message(text, cfg, font)
+        rows = len(wrapped.splitlines())
+        if rows > 4:
+            raise ValueError(f'Project copy exceeds four terminal lines in {name}; shorten title/summary')
+        if any(font.getlength(line) > cfg['size'][0] - 2 * cfg['text_origin'][0] - 24
+               for line in wrapped.splitlines()):
+            raise ValueError(f'Project copy exceeds horizontal space in {name}')
+        bottom = cfg['text_origin'][1] + (len(cfg['persistent_lines']) + 2 + rows) * cfg['line_height']
+        if bottom > cfg['size'][1] - 20:
+            raise ValueError(f'Project copy clips the terminal viewport in {name}')
+        longest = max(longest, len(wrapped))
+    return longest
+
+
+def make_storyboard(template, selected):
     scenes = [dict(s) for s in template['scenes'][:2]]
     start = 18
     for project, item in selected:
         text = f'{item["title"]}. {item["summary"]}'
-        longest = 0
-        for layout in template['layouts'].values():
-            cfg = template | layout
-            font = ImageFont.truetype(str(ROOT / 'assets/profile/fonts/CourierPrime-Regular.ttf'), cfg['font_size'])
-            wrapped = wrap_message(text, cfg, font)
-            rows = len(wrapped.splitlines())
-            if rows > 4:
-                raise ValueError('Project copy exceeds four terminal lines')
-            bottom = cfg['text_origin'][1] + (len(cfg['persistent_lines']) + 2 + rows) * cfg['line_height']
-            if bottom > cfg['size'][1] - 20:
-                raise ValueError('Project copy clips the terminal viewport')
-            longest = max(longest, len(wrapped))
+        longest = project_text_length(template, item)
         scenes.append({'start': start, 'text': text})
         start += math.ceil(longest / template['characters_per_second'] + 0.35 + 5)
     scenes += [{'start': start, 'text': 'Follow gregl83.'}, {'start': start + 8, 'text': 'Knock, knock.'}]

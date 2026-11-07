@@ -41,12 +41,23 @@ class ShowcaseTests(unittest.TestCase):
 
     def test_invalid_copy_and_evidence(self):
         p = project()
-        for bad in ('Seeking a job at OpenAI.', 'Hire me for systems engineering.', 'Processes 1000 requests per second.', 'x' * 69, 'Claims\nwith newlines'):
+        for bad in ('Seeking a job at OpenAI.', 'Hire me for systems engineering.', 'Processes 1000 requests per second.', 'x' * 121, 'Claims\nwith newlines'):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 s.validate_summary(summary(p) | {'summary': bad}, p)
         item = summary(p)
         item['evidence'][0]['quote'] = 'This claim is not in the source.'
         with self.assertRaises(ValueError):
+            s.validate_summary(item, p)
+
+    def test_actual_fit_accepts_longer_copy_and_rejects_overflow(self):
+        text = 'Streamline HTTP cookie validation assertions within SuperTest workflows'
+        p = project(text=text)
+        item = summary(p) | {'title': 'Expect Cookies', 'summary': text}
+        self.assertEqual(len(text), 71)
+        self.assertEqual(s.validate_summary(item, p), item)
+        long_text = 'instrumentation ' * 7
+        item['summary'] = long_text.strip()
+        with self.assertRaisesRegex(ValueError, 'four terminal lines'):
             s.validate_summary(item, p)
 
     def test_technology_names_can_contain_digits(self):
@@ -109,7 +120,7 @@ class ShowcaseTests(unittest.TestCase):
         projects = [project('org/good'), project('org/long')]
         original = {p['repo']: {k: v for k, v in summary(p).items() if k != 'repo'}
                     for p in projects}
-        original['org/long']['summary'] = 'x' * 69
+        original['org/long']['summary'] = 'x' * 121
         corrected = {k: v for k, v in summary(projects[1]).items() if k != 'repo'}
         requests = []
         real_client = genai.Client
@@ -140,9 +151,24 @@ class ShowcaseTests(unittest.TestCase):
             required = requests[1]['generationConfig']['responseSchema']['properties']['projects']
             self.assertEqual(required['required'], ['org/long'])
             repair_succeeds = False
-            with self.assertRaisesRegex(ValueError, 'still invalid after one repair'):
-                s.generate(projects, 'test-model', output=output)
+            results = s.generate(projects, 'test-model', output=output)
+            self.assertEqual(results[0], summary(projects[0]))
+            self.assertIn('rejected', results[1])
             self.assertEqual(len(requests), 4)
+
+    def test_rejected_candidate_is_cached_and_never_selected(self):
+        projects = [project(f'org/{name}') for name in ('a', 'b', 'c', 'bad')]
+        results = [summary(p) for p in projects[:3]] + [
+            {'repo': 'org/bad', 'rejected': 'Summary too long'}]
+        cache, _ = s.summarize(projects, {}, 'model', lambda *_: results)
+        self.assertEqual(len(s.choose(projects, cache)), 3)
+        with self.assertRaisesRegex(ValueError, 'Need 4 distinct'):
+            s.choose(projects, cache, count=4)
+        with patch.object(s, 'generate') as model:
+            reused, changed = s.summarize(projects, cache, 'model', model)
+            model.assert_not_called()
+        self.assertEqual(changed, 0)
+        self.assertEqual(cache, reused)
 
     def test_coverage_error_identifies_missing_unexpected_and_duplicates(self):
         p = project()

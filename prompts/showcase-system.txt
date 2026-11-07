@@ -15,7 +15,10 @@ For each repository:
   or replace distinct products with a generic organization name. Never invent an
   affiliation or infer authorship from an organization pin.
 - summary: one compelling, concrete implemented capability or technical mechanism,
-  ASCII, at most 68 characters. Describe what the project does and why the mechanism
+  ASCII, aim for 55-80 characters; shorter is fine. Maximum 120 characters as
+  an outer safety bound. Title and summary together must fit four mobile lines
+  of about 30 characters each, wrapping at word boundaries. Prefer one specific
+  technical mechanism over filling the available space. Describe why the mechanism
   matters when it fits. Prefer precise verbs over slogans or lists of technologies.
 - No line breaks: the renderer decides wrapping. Do not truncate mid-sentence.
 - No job seeking, hiring, recruitment, employer targeting, or references to frontier

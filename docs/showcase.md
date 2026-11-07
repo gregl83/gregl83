@@ -26,10 +26,12 @@ AI produces text only. No image-generation API is called.
    twelve candidates / 72,000 document characters and 8,192 output tokens. No
    search, tools, image APIs, or separate model-ranking call. Unchanged runs use
    zero model requests. API charges still depend on the configured model.
-6. Validate ASCII text, title <=26 characters, summary <=68 characters, no hiring
+6. Validate ASCII text, title <=26 characters, summary targeted at 55-80 characters
+   (120-character safety bound), combined title/summary fitting four lines in both layouts, no hiring
    or employer-targeting copy, no numeric/comparative claims in short summaries,
    ranking scores, and exact evidence quotes from supplied documents. Invalid
-   output stops the job; it is never silently truncated or automatically retried.
+   candidates get one targeted correction attempt, then are excluded if still
+   invalid. Text is never silently truncated. Batch/transport failures stop the job.
 7. Rank every candidate before selecting three projects (or four with
    `--project-count 4`). Weight relevance ×2, engineering substance ×3, and
    evidence strength ×3; require at least 3/5 on every axis.
@@ -205,3 +207,10 @@ runs still make zero model calls.
 Project titles prefer documented product names. Organization display metadata
 is supplied to the model, so Agent Vigilo can keep its public branding. Distinct
 products within one organization retain their own identities.
+
+If an individual summary remains invalid after the one correction request, cache
+its exclusion and rank only validated candidates. Unchanged excluded candidates
+do not trigger another paid request. Changed evidence or policy reevaluates them.
+Publication still requires the requested number of distinct, qualified projects.
+Raw initial and repair responses are retained in review artifacts, not published
+as profile copy.
