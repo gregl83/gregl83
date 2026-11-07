@@ -23,3 +23,6 @@ target
 github_gregl83.egg-info/
 .env
 out/
+
+# Local agent workspace and plans
+/.agents/
